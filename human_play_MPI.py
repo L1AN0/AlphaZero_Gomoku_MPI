@@ -4,7 +4,7 @@ Created on Mon Dec 10 17:45:36 2018
 
 @author: initial-h
 """
-'''
+"""
 write a root parallel mcts and vote a move like ensemble way
 why i do this:
 when i train the network, i should try some parameter settings 
@@ -18,7 +18,7 @@ you can also weights each model to get the weighted next move(i don't do it here
 and also each rank can load the same model and vote the next move, 
 besides the upper benifit ,it can also improve the strength and save the playout time by parallel.
 some other parallel ways can find in《Parallel Monte-Carlo Tree Search》.
-'''
+"""
 
 from game_board import Board
 from mcts_pure import MCTSPlayer as MCTS_Pure
@@ -31,13 +31,14 @@ from GUI_v1_4 import GUI
 # how  to run :
 # mpiexec -np 2 python -u human_play_mpi.py
 
-#　MPI setting
+# 　MPI setting
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 # game setting
 n_in_row = 5
 width, height = 11, 11
+
 
 class Human(object):
     """
@@ -50,7 +51,7 @@ class Human(object):
     def set_player_ind(self, p):
         self.player = p
 
-    def get_action(self, board,is_selfplay=False,print_probs_value=0):
+    def get_action(self, board, is_selfplay=False, print_probs_value=0):
         # no use params in the func : is_selfplay,print_probs_value
         # just to stay the same with AI's API
         try:
@@ -62,16 +63,17 @@ class Human(object):
             move = -1
         if move == -1 or move not in board.availables:
             print("invalid move")
-            move,_ = self.get_action(board)
-        return move,None
+            move, _ = self.get_action(board)
+        return move, None
 
     def __str__(self):
         return "Human {}".format(self.player)
 
+
 def graphic(board, player1=1, player2=2):
-    '''
+    """
     Draw the board and show game info
-    '''
+    """
     width = board.width
     height = board.height
 
@@ -79,29 +81,29 @@ def graphic(board, player1=1, player2=2):
     print("Player", player2, "with O".rjust(3))
     print(board.states)
     print()
-    print(' ' * 2, end='')
+    print(" " * 2, end="")
     # rjust()
     # http://www.runoob.com/python/att-string-rjust.html
     for x in range(width):
-        print("{0:4}".format(x), end='')
+        print("{0:4}".format(x), end="")
     # print('\r\n')
-    print('\r')
+    print("\r")
     for i in range(height - 1, -1, -1):
-        print("{0:4d}".format(i), end='')
+        print("{0:4d}".format(i), end="")
         for j in range(width):
             loc = i * width + j
             p = board.states.get(loc, -1)
             if p == player1:
-                print('X'.center(4), end='')
+                print("X".center(4), end="")
             elif p == player2:
-                print('O'.center(4), end='')
+                print("O".center(4), end="")
             else:
-                print('-'.center(4), end='')
+                print("-".center(4), end="")
         # print('\r\n') # new line
-        print('\r')
+        print("\r")
 
 
-board= Board(width=width,height=height,n_in_row=n_in_row)
+board = Board(width=width, height=height, n_in_row=n_in_row)
 
 # init model here
 # if you want to load different models in each rank,
@@ -109,18 +111,23 @@ board= Board(width=width,height=height,n_in_row=n_in_row)
 # if rank == 0 : model_file = '...'
 # if rank == 1 : model_file = '...'
 
-model_file='model_11_11_5/best_policy.model'
-best_policy = PolicyValueNet(board_width=width,board_height=height,block=19,init_model=model_file,cuda=True)
-alpha_zero_player = MCTSPlayer(policy_value_function=best_policy.policy_value_fn_random,
-                         action_fc=best_policy.action_fc_test,
-                         evaluation_fc=best_policy.evaluation_fc2_test,
-                         c_puct=5,
-                         n_playout=400,
-                         is_selfplay=False)
+model_file = "model_11_11_5/best_policy.model"
+best_policy = PolicyValueNet(
+    board_width=width, board_height=height, block=19, init_model=model_file, cuda=True
+)
+alpha_zero_player = MCTSPlayer(
+    policy_value_function=best_policy.policy_value_fn_random,
+    action_fc=best_policy.action_fc_test,
+    evaluation_fc=best_policy.evaluation_fc2_test,
+    c_puct=5,
+    n_playout=400,
+    is_selfplay=False,
+)
 
 player1 = Human()
 player2 = alpha_zero_player
 # player2 = MCTS_Pure(5,200)
+
 
 def start_play(start_player=0, is_shown=1):
     # run a gomoku game with AI in terminal
@@ -138,7 +145,9 @@ def start_play(start_player=0, is_shown=1):
     if start_player == 0:
         # human first to play
         if rank == 0:
-            bcast_move,move_probs = player1.get_action(board=board,is_selfplay=False,print_probs_value=False)
+            bcast_move, move_probs = player1.get_action(
+                board=board, is_selfplay=False, print_probs_value=False
+            )
         # bcast the move to other ranks
         bcast_move = comm.bcast(bcast_move, root=0)
         # print('!'*10,rank,bcast_move)
@@ -159,15 +168,19 @@ def start_play(start_player=0, is_shown=1):
         # AI's turn
         if rank == 0:
             # print prior probabilities
-            gather_move, move_probs = player2.get_action(board=board,is_selfplay=False,print_probs_value=True)
+            gather_move, move_probs = player2.get_action(
+                board=board, is_selfplay=False, print_probs_value=True
+            )
         else:
-            gather_move, move_probs = player2.get_action(board=board, is_selfplay=False, print_probs_value=False)
+            gather_move, move_probs = player2.get_action(
+                board=board, is_selfplay=False, print_probs_value=False
+            )
 
         gather_move_list = comm.gather(gather_move, root=0)
 
         if rank == 0:
             # gather ecah rank's move and get the most selected one
-            print('list is', gather_move_list)
+            print("list is", gather_move_list)
             bcast_move = Counter(gather_move_list).most_common()[0][0]
 
         # bcast the move to other ranks
@@ -220,6 +233,7 @@ def start_play(start_player=0, is_shown=1):
                     print("Game end. Tie")
             break
 
+
 def start_play_with_UI(start_player=0):
     # run a gomoku game with AI in GUI
     bcast_move = -1
@@ -239,9 +253,9 @@ def start_play_with_UI(start_player=0):
 
         if rank == 0:
             if current_player_num == 0:
-                UI.show_messages('Your turn')
+                UI.show_messages("Your turn")
             else:
-                UI.show_messages('AI\'s turn')
+                UI.show_messages("AI's turn")
 
         # AI's turn
         if current_player_num == 1 and not end:
@@ -249,16 +263,20 @@ def start_play_with_UI(start_player=0):
             player2.reset_player()
             if rank == 0:
                 # print prior probabilities
-                gather_move, move_probs = player2.get_action(board=board, is_selfplay=False, print_probs_value=True)
+                gather_move, move_probs = player2.get_action(
+                    board=board, is_selfplay=False, print_probs_value=True
+                )
             else:
-                gather_move, move_probs = player2.get_action(board=board, is_selfplay=False, print_probs_value=False)
+                gather_move, move_probs = player2.get_action(
+                    board=board, is_selfplay=False, print_probs_value=False
+                )
 
             gather_move_list = comm.gather(gather_move, root=0)
             # print('list is', gather_move_list)
 
             if rank == 0:
                 # gather ecah rank's move and get the most selected one
-                print('list is', gather_move_list)
+                print("list is", gather_move_list)
                 bcast_move = Counter(gather_move_list).most_common()[0][0]
                 # print(board.move_to_location(bcast_move))
 
@@ -266,28 +284,28 @@ def start_play_with_UI(start_player=0):
         else:
             if rank == 0:
                 inp = UI.get_input()
-                if inp[0] == 'move' and not end:
+                if inp[0] == "move" and not end:
                     if type(inp[1]) != int:
                         bcast_move = UI.loc_2_move(inp[1])
                     else:
                         bcast_move = inp[1]
 
-                elif inp[0] == 'RestartGame':
+                elif inp[0] == "RestartGame":
                     UI.restart_game()
-                    restart = SP+1
+                    restart = SP + 1
 
-                elif inp[0] == 'ResetScore':
+                elif inp[0] == "ResetScore":
                     UI.reset_score()
                     continue
 
-                elif inp[0] == 'quit':
-                    restart = 'exit'
+                elif inp[0] == "quit":
+                    restart = "exit"
 
-                elif inp[0] == 'SwitchPlayer':
+                elif inp[0] == "SwitchPlayer":
                     SP = (SP + 1) % 2
                     UI.restart_game(False)
                     UI.reset_score()
-                    restart = SP+1
+                    restart = SP + 1
 
                 else:
                     # print('ignored inp:', inp)
@@ -320,17 +338,15 @@ def start_play_with_UI(start_player=0):
                         print("Game end. Tie")
         else:
             if restart:
-                if restart == 'exit':
+                if restart == "exit":
                     exit()
                 board.init_board()
                 player2.reset_player()
-                current_player_num = restart-1
+                current_player_num = restart - 1
                 restart = 0
                 end = False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # start_play(start_player=0,is_shown=True)
     start_play_with_UI()
-
-

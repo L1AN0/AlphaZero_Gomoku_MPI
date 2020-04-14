@@ -8,7 +8,7 @@ Created on Fri Dec  7 15:14:24 2018
 import numpy as np
 from collections import deque
 from GUI_v1_4 import GUI
-
+import mcts_alphaZero
 
 class Board(object):
     """
@@ -352,7 +352,7 @@ class Game(object):
                         print("Game end. Tie")
                 return winner
 
-    def start_play_with_UI(self, AI, start_player=0):
+    def start_play_with_UI(self, AI: mcts_alphaZero.MCTSPlayer, start_player=0):
         """
         a GUI for playing
         """

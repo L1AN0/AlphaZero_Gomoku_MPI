@@ -2,9 +2,34 @@
 
 <img src="demo/demo.gif" width=400 >
 
-## Updating
-* **2019.03.05 -- upload a 15x15 board [model](https://github.com/initial-h/AlphaZero_Gomoku_MPI/tree/master/model_15_15_5)**
-* **Please download and try it yourself. If you have questions or ideas about AlphaZero and MCTS, feel free to issue me and maybe we can do some improvement.**
+## Install dependencies
+
+Install miniconda from here: https://docs.conda.io/en/latest/miniconda.html
+
+Then run
+
+```
+conda env create -f requirements.yaml
+conda activate gomoku
+```
+
+## How to Run
+* Play with AI
+```
+python human_play.py
+```
+* Play with parallel AI (-np : set number of processings, take care of OOM !)
+```
+mpiexec -np 3 python -u human_play_mpi.py 
+```
+* Train from scratch
+```
+python train.py
+```
+* Train in parallel
+```
+mpiexec -np 43 python -u train_mpi.py
+```
 
 ## Overview
 This repo is based on [junxiaosong/AlphaZero_Gomoku](https://github.com/junxiaosong/AlphaZero_Gomoku), sincerely grateful for it.
@@ -29,44 +54,6 @@ References
 Blog
 * [deepmind blog](https://deepmind.com/blog/alphazero-shedding-new-light-grand-games-chess-shogi-and-go/)
 * [mpi4py blog -- author: 自可乐](https://www.jianshu.com/p/505ab84fe725)
-
-## Installation Dependencies
-* Python3 (my own 3.6.8)
-* tensorflow>=1.8.0 (my own 1.12.0)
-* tensorlayer>=1.8.5 (my own 1.10.1)
-* mpi4py (parallel train and play)(my own 2.0.0)
-* pygame (GUI)(my own 1.9.6)
-
-## How to Install
-
-> tensorflow/tensorlayer/pygame install : 
-```
-pip install tensorflow
-pip install tensorlayer
-pip install pygame
-```
-
-> mpi4py install [click here](https://www.jianshu.com/p/ba6f7c9415a0)
->
-> mpi4py on windows [click here](https://blog.csdn.net/mengmengz07/article/details/70163140)
-
-## How to Run
-* Play with AI
-```
-python human_play.py
-```
-* Play with parallel AI (-np : set number of processings, take care of OOM !)
-```
-mpiexec -np 3 python -u human_play_mpi.py 
-```
-* Train from scratch
-```
-python train.py
-```
-* Train in parallel
-```
-mpiexec -np 43 python -u train_mpi.py
-```
 
 ## Algorithm
 It's almost no difference between AlphaGo Zero except APV-MCTS.
